@@ -10,10 +10,11 @@ using Steamworks;
 namespace Network;
 
 [BepInPlugin(ModGUID, ModName, ModVersion)]
+[BepInIncompatibility("org.bepinex.plugins.valheim_plus")]
 public class Network : BaseUnityPlugin
 {
 	private const string ModName = "Network";
-	private const string ModVersion = "1.0.1";
+	private const string ModVersion = "1.0.2";
 	private const string ModGUID = "org.bepinex.plugins.network";
 
 	public void Awake()
@@ -22,7 +23,7 @@ public class Network : BaseUnityPlugin
 		Harmony harmony = new(ModGUID);
 		harmony.PatchAll(assembly);
 	}
-	
+
 	[HarmonyPatch(typeof(ZSteamSocket), nameof(ZSteamSocket.RegisterGlobalCallbacks))]
 	private static class IncreaseSendingLimit
 	{
