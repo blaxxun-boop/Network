@@ -65,10 +65,6 @@ public static class SteamSettings
 			{
 				Network.NetworkLogger.LogWarning("Steam rejected a socket setting. The ZDO changes still work, but check this machine's Steam initialization.");
 			}
-			else
-			{
-				Network.NetworkLogger.LogError("WORKING!");
-			}
 		}
 	}
 }
