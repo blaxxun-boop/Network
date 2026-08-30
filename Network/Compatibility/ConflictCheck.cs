@@ -45,10 +45,7 @@ internal static class ConflictCheck
 			HashSet<string> otherOwners = new();
 			foreach (string owner in patches.Owners)
 			{
-				bool handledCompatibilityPatch =
-					type == typeof(ZDOMan) &&
-					methodName == nameof(ZDOMan.Update) &&
-					owner == Network.ReturnToSenderGUID;
+				bool handledCompatibilityPatch = type == typeof(ZDOMan) && methodName == nameof(ZDOMan.Update) && owner == Network.ReturnToSenderGUID;
 
 				if (owner != ownHarmonyId && !handledCompatibilityPatch)
 				{
