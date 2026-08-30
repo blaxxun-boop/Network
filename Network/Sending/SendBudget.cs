@@ -7,7 +7,7 @@ internal static class SendBudget
 	private const float SmallServerRate = 1.5f;
 	private const float BoostWorkPeers = 15f;
 
-	public static float PerPeerRate(int peerCount, float interval)
+	private static float PerPeerRate(int peerCount, float interval)
 	{
 		float baseline = 1f / Mathf.Max(interval, 0.01f);
 		return peerCount > 0 ? baseline * Mathf.Max(1f, Mathf.Min(SmallServerRate, BoostWorkPeers / peerCount)) : 0f;

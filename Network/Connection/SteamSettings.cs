@@ -2,7 +2,6 @@ using System;
 using System.Runtime.InteropServices;
 using HarmonyLib;
 using Steamworks;
-using UnityEngine;
 
 namespace Network.Connection;
 

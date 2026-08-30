@@ -21,8 +21,8 @@ public class Network : BaseUnityPlugin
 
 	public static readonly ManualLogSource NetworkLogger = BepInEx.Logging.Logger.CreateLogSource(ModName);
 
-	public static ConfigEntry<Toggle> enableNetworkingImprovements = null!;
-	public static ConfigEntry<Toggle> reportPatchConflicts = null!;
+	private static ConfigEntry<Toggle> enableNetworkingImprovements = null!;
+	private static ConfigEntry<Toggle> reportPatchConflicts = null!;
 	public static ConfigEntry<Toggle> adaptiveZdoScheduler = null!;
 	public static ConfigEntry<float> sendInterval = null!;
 	public static ConfigEntry<int> maxPeersPerFrame = null!;
