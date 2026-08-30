@@ -12,12 +12,14 @@ public static class ZDODataBuffer
 	{
 		private static void Postfix(ZNet __instance, ZNetPeer peer)
 		{
-			if (!__instance.IsServer())
+			if (__instance.IsServer())
 			{
-				List<ZPackage> packages = new();
-				packageBuffers[peer.m_rpc] = packages;
-				peer.m_rpc.Register<ZPackage>("ZDOData", (_, package) => packages.Add(package));
+				return;
 			}
+
+			List<ZPackage> packages = new();
+			packageBuffers[peer.m_rpc] = packages;
+			peer.m_rpc.Register<ZPackage>("ZDOData", (_, package) => packages.Add(package));
 		}
 	}
 

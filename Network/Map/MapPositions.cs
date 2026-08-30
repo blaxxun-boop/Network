@@ -120,16 +120,18 @@ public static class MapPositions
 
 			ZRoutedRpc.instance.InvokeRoutedRPC(ZRoutedRpc.Everybody, RPCName, pkg);
 
-			if (Minimap.instance)
+			if (!Minimap.instance)
 			{
-				float now = Time.time;
-				foreach ((ZDOID id, Vector3 position) in positions)
-				{
-					Record(id, position, now);
-				}
-
-				Prune(now);
+				return;
 			}
+
+			float now = Time.time;
+			foreach ((ZDOID id, Vector3 position) in positions)
+			{
+				Record(id, position, now);
+			}
+
+			Prune(now);
 		}
 	}
 
@@ -152,11 +154,13 @@ public static class MapPositions
 					continue;
 				}
 
-				if (track.TryGet(Time.time - track.Delay, out Vector3 pos) && pos != __instance.m_playerPins[i].m_pos)
+				if (!track.TryGet(Time.time - track.Delay, out Vector3 pos) || pos == __instance.m_playerPins[i].m_pos)
 				{
-					__instance.m_playerPins[i].m_pos = pos;
-					__instance.m_pinUpdateRequired = true;
+					continue;
 				}
+
+				__instance.m_playerPins[i].m_pos = pos;
+				__instance.m_pinUpdateRequired = true;
 			}
 		}
 	}

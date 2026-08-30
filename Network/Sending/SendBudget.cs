@@ -30,11 +30,13 @@ internal static class SendBudget
 		budget -= serve;
 
 		// A hitch can hand me 1 second of dt. Lap once.
-		if (serve > count)
+		if (serve <= count)
 		{
-			serve = count;
-			budget = 0f;
+			return cap > 0 ? Mathf.Min(serve, cap) : serve;
 		}
+
+		serve = count;
+		budget = 0f;
 
 		return cap > 0 ? Mathf.Min(serve, cap) : serve;
 	}

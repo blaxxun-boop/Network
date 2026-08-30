@@ -10,9 +10,8 @@ internal sealed class MarkerTrack
 	private readonly List<(float time, Vector3 position)> snapshots = new();
 	private Vector3 velocity;
 	private float arrivalGap = 0.5f;
-	private float lastArrival = -1f;
 
-	public float LastArrival => lastArrival;
+	public float LastArrival { get; private set; } = -1f;
 
 	// MarkerTrack.Delay sits 1.3 intervals back.
 	public float Delay => Mathf.Clamp(arrivalGap * 1.3f, 0.15f, 2f);
@@ -24,13 +23,13 @@ internal sealed class MarkerTrack
 			return;
 		}
 
-		if (lastArrival >= 0f)
+		if (LastArrival >= 0f)
 		{
 			// This prevents markers jumping around.
-			arrivalGap = Mathf.Lerp(arrivalGap, Mathf.Clamp(now - lastArrival, 0.05f, 3f), 0.25f);
+			arrivalGap = Mathf.Lerp(arrivalGap, Mathf.Clamp(now - LastArrival, 0.05f, 3f), 0.25f);
 		}
 
-		lastArrival = now;
+		LastArrival = now;
 
 		if (snapshots.Count > 0)
 		{
@@ -72,8 +71,8 @@ internal sealed class MarkerTrack
 		{
 			if (renderTime <= snapshots[i].time)
 			{
-				(float time, Vector3 position) a = snapshots[i - 1], b = snapshots[i];
-				result = Vector3.Lerp(a.position, b.position, Mathf.InverseLerp(a.time, b.time, renderTime));
+				(float time, Vector3 position) previous = snapshots[i - 1], next = snapshots[i];
+				result = Vector3.Lerp(previous.position, next.position, Mathf.InverseLerp(previous.time, next.time, renderTime));
 				return true;
 			}
 		}

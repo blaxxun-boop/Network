@@ -7,20 +7,20 @@ internal static class SortedMerge
 {
 	public static void Into<T>(List<T> destination, List<T> left, List<T> right, Comparison<T> compare)
 	{
-		int a = 0, b = 0, i = 0;
-		while (a < left.Count && b < right.Count)
+		int leftIndex = 0, rightIndex = 0, destinationIndex = 0;
+		while (leftIndex < left.Count && rightIndex < right.Count)
 		{
-			destination[i++] = compare(left[a], right[b]) <= 0 ? left[a++] : right[b++];
+			destination[destinationIndex++] = compare(left[leftIndex], right[rightIndex]) <= 0 ? left[leftIndex++] : right[rightIndex++];
 		}
 
-		while (a < left.Count)
+		while (leftIndex < left.Count)
 		{
-			destination[i++] = left[a++];
+			destination[destinationIndex++] = left[leftIndex++];
 		}
 
-		while (b < right.Count)
+		while (rightIndex < right.Count)
 		{
-			destination[i++] = right[b++];
+			destination[destinationIndex++] = right[rightIndex++];
 		}
 	}
 }
