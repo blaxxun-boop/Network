@@ -7,9 +7,9 @@ namespace Network.Compatibility;
 
 internal static class ConflictCheck
 {
-	private static bool done;
+	private static bool reported;
 
-	private static readonly (Type type, string method)[] contested =
+	private static readonly (Type type, string method)[] contestedMethods =
 	{
 		(typeof(ZDOMan), nameof(ZDOMan.Update)),
 		(typeof(ZDOMan), nameof(ZDOMan.SendZDOToPeers2)),
@@ -18,16 +18,16 @@ internal static class ConflictCheck
 		(typeof(ZSteamSocket), nameof(ZSteamSocket.RegisterGlobalCallbacks)),
 	};
 
-	public static void Report(string selfId)
+	public static void Report(string ownHarmonyId)
 	{
-		if (done)
+		if (reported)
 		{
 			return;
 		}
 
-		done = true;
+		reported = true;
 
-		foreach ((Type type, string methodName) in contested)
+		foreach ((Type type, string methodName) in contestedMethods)
 		{
 			MethodBase? method = AccessTools.DeclaredMethod(type, methodName);
 			if (method == null)
@@ -36,25 +36,29 @@ internal static class ConflictCheck
 				continue;
 			}
 
-			Patches? info = Harmony.GetPatchInfo(method);
-			if (info == null)
+			Patches? patches = Harmony.GetPatchInfo(method);
+			if (patches == null)
 			{
 				continue;
 			}
 
-			HashSet<string> others = new();
-			foreach (string owner in info.Owners)
+			HashSet<string> otherOwners = new();
+			foreach (string owner in patches.Owners)
 			{
-				bool handledReturnToSender = type == typeof(ZDOMan) && methodName == nameof(ZDOMan.Update) && owner == Network.ReturnToSenderGUID;
-				if (owner != selfId && !handledReturnToSender)
+				bool handledCompatibilityPatch =
+					type == typeof(ZDOMan) &&
+					methodName == nameof(ZDOMan.Update) &&
+					owner == Network.ReturnToSenderGUID;
+
+				if (owner != ownHarmonyId && !handledCompatibilityPatch)
 				{
-					others.Add(owner);
+					otherOwners.Add(owner);
 				}
 			}
 
-			if (others.Count > 0)
+			if (otherOwners.Count > 0)
 			{
-				Network.NetworkLogger.LogWarning($"{type.Name}.{methodName} is also patched by: {string.Join(", ", others)}. Expect one of us to win. If networking misbehaves, remove the other networking mod before reporting a bug.");
+				Network.NetworkLogger.LogWarning($"{type.Name}.{methodName} is also patched by: {string.Join(", ", otherOwners)}. Expect one of us to win. If networking misbehaves, remove the other networking mod before reporting a bug.");
 			}
 		}
 	}

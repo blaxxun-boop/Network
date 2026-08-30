@@ -8,14 +8,18 @@ namespace Network.Connection;
 
 public static class SteamSettings
 {
-	private static bool SetInt(ESteamNetworkingConfigValue setting, int value)
+	private static bool Set<T>(ESteamNetworkingConfigValue setting, ESteamNetworkingConfigDataType dataType, T value) where T : struct
 	{
 		GCHandle handle = GCHandle.Alloc(value, GCHandleType.Pinned);
 		try
 		{
-			return ZNet.instance && ZNet.instance.IsDedicated()
-				? SteamGameServerNetworkingUtils.SetConfigValue(setting, ESteamNetworkingConfigScope.k_ESteamNetworkingConfig_Global, IntPtr.Zero, ESteamNetworkingConfigDataType.k_ESteamNetworkingConfig_Int32, handle.AddrOfPinnedObject())
-				: SteamNetworkingUtils.SetConfigValue(setting, ESteamNetworkingConfigScope.k_ESteamNetworkingConfig_Global, IntPtr.Zero, ESteamNetworkingConfigDataType.k_ESteamNetworkingConfig_Int32, handle.AddrOfPinnedObject());
+			IntPtr valuePointer = handle.AddrOfPinnedObject();
+			if (ZNet.instance && ZNet.instance.IsDedicated())
+			{
+				return SteamGameServerNetworkingUtils.SetConfigValue(setting, ESteamNetworkingConfigScope.k_ESteamNetworkingConfig_Global, IntPtr.Zero, dataType, valuePointer);
+			}
+
+			return SteamNetworkingUtils.SetConfigValue(setting, ESteamNetworkingConfigScope.k_ESteamNetworkingConfig_Global, IntPtr.Zero, dataType, valuePointer);
 		}
 		finally
 		{
@@ -23,20 +27,9 @@ public static class SteamSettings
 		}
 	}
 
-	private static bool SetFloat(ESteamNetworkingConfigValue setting, float value)
-	{
-		GCHandle handle = GCHandle.Alloc(value, GCHandleType.Pinned);
-		try
-		{
-			return ZNet.instance && ZNet.instance.IsDedicated()
-				? SteamGameServerNetworkingUtils.SetConfigValue(setting, ESteamNetworkingConfigScope.k_ESteamNetworkingConfig_Global, IntPtr.Zero, ESteamNetworkingConfigDataType.k_ESteamNetworkingConfig_Float, handle.AddrOfPinnedObject())
-				: SteamNetworkingUtils.SetConfigValue(setting, ESteamNetworkingConfigScope.k_ESteamNetworkingConfig_Global, IntPtr.Zero, ESteamNetworkingConfigDataType.k_ESteamNetworkingConfig_Float, handle.AddrOfPinnedObject());
-		}
-		finally
-		{
-			handle.Free();
-		}
-	}
+	private static bool SetInt(ESteamNetworkingConfigValue setting, int value) => Set(setting, ESteamNetworkingConfigDataType.k_ESteamNetworkingConfig_Int32, value);
+
+	private static bool SetFloat(ESteamNetworkingConfigValue setting, float value) => Set(setting, ESteamNetworkingConfigDataType.k_ESteamNetworkingConfig_Float, value);
 
 	[HarmonyPatch(typeof(ZSteamSocket), nameof(ZSteamSocket.RegisterGlobalCallbacks))]
 	private static class IncreaseSendingLimit

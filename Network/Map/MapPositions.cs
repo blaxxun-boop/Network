@@ -15,7 +15,7 @@ public static class MapPositions
 	private static readonly Dictionary<ZDOID, MarkerTrack> tracks = new();
 	private static readonly List<ZDOID> stale = new();
 
-	private static void Record(ZDOID id, Vector3 pos, float now)
+	private static void Record(ZDOID id, Vector3 position, float now)
 	{
 		if (!tracks.TryGetValue(id, out MarkerTrack track))
 		{
@@ -23,10 +23,10 @@ public static class MapPositions
 			tracks[id] = track;
 		}
 
-		track.Add(now, pos, Network.mapTeleportThreshold.Value);
+		track.Add(now, position, Network.mapTeleportThreshold.Value);
 	}
 
-	private static void RPC_MapPos(long sender, ZPackage pkg)
+	private static void RPC_ReceiveMapPos(long sender, ZPackage package)
 	{
 		if (!Network.ImprovementEnabled(Network.smoothMapMarkers) || !ZNet.instance || ZNet.instance.IsServer())
 		{
@@ -40,10 +40,10 @@ public static class MapPositions
 		}
 
 		float now = Time.time;
-		int count = pkg.ReadInt();
+		int count = package.ReadInt();
 		for (int i = 0; i < count; ++i)
 		{
-			Record(pkg.ReadZDOID(), pkg.ReadVector3(), now);
+			Record(package.ReadZDOID(), package.ReadVector3(), now);
 		}
 
 		Prune(now);
@@ -69,7 +69,7 @@ public static class MapPositions
 	[HarmonyPatch(typeof(ZRoutedRpc), MethodType.Constructor, typeof(bool))]
 	private static class RegisterRPC
 	{
-		private static void Postfix(ZRoutedRpc __instance) => __instance.Register<ZPackage>(RPCName, RPC_MapPos);
+		private static void Postfix(ZRoutedRpc __instance) => __instance.Register<ZPackage>(RPCName, RPC_ReceiveMapPos);
 	}
 
 	[HarmonyPatch(typeof(ZNet), nameof(ZNet.Update))]
@@ -91,10 +91,10 @@ public static class MapPositions
 			sendTimer %= Network.mapSendInterval.Value;
 
 			positions.Clear();
-			ZDOID local = __instance.LocalPlayerCharacterID;
-			if (__instance.IsReferencePositionPublic() && !local.IsNone())
+			ZDOID localPlayer = __instance.LocalPlayerCharacterID;
+			if (__instance.IsReferencePositionPublic() && !localPlayer.IsNone())
 			{
-				positions.Add((local, PeerPosition.GetOr(local, __instance.GetReferencePosition())));
+				positions.Add((localPlayer, PeerPosition.GetOr(localPlayer, __instance.GetReferencePosition())));
 			}
 
 			foreach (ZNetPeer peer in __instance.GetPeers())
@@ -110,15 +110,15 @@ public static class MapPositions
 				return;
 			}
 
-			ZPackage pkg = new();
-			pkg.Write(positions.Count);
+			ZPackage package = new();
+			package.Write(positions.Count);
 			foreach ((ZDOID id, Vector3 position) in positions)
 			{
-				pkg.Write(id);
-				pkg.Write(position);
+				package.Write(id);
+				package.Write(position);
 			}
 
-			ZRoutedRpc.instance.InvokeRoutedRPC(ZRoutedRpc.Everybody, RPCName, pkg);
+			ZRoutedRpc.instance.InvokeRoutedRPC(ZRoutedRpc.Everybody, RPCName, package);
 
 			if (!Minimap.instance)
 			{
@@ -145,21 +145,22 @@ public static class MapPositions
 				return;
 			}
 
-			int count = Mathf.Min(__instance.m_playerPins.Count, __instance.m_tempPlayerInfo.Count);
-			for (int i = 0; i < count; ++i)
+			float renderTime = Time.time;
+			int pinCount = Mathf.Min(__instance.m_playerPins.Count, __instance.m_tempPlayerInfo.Count);
+			for (int i = 0; i < pinCount; ++i)
 			{
-				ZNet.PlayerInfo info = __instance.m_tempPlayerInfo[i];
-				if (!tracks.TryGetValue(info.m_characterID, out MarkerTrack track))
+				ZNet.PlayerInfo playerInfo = __instance.m_tempPlayerInfo[i];
+				if (!tracks.TryGetValue(playerInfo.m_characterID, out MarkerTrack track))
 				{
 					continue;
 				}
 
-				if (!track.TryGet(Time.time - track.Delay, out Vector3 pos) || pos == __instance.m_playerPins[i].m_pos)
+				if (!track.TryGet(renderTime - track.Delay, out Vector3 position) || position == __instance.m_playerPins[i].m_pos)
 				{
 					continue;
 				}
 
-				__instance.m_playerPins[i].m_pos = pos;
+				__instance.m_playerPins[i].m_pos = position;
 				__instance.m_pinUpdateRequired = true;
 			}
 		}

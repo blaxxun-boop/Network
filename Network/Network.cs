@@ -101,10 +101,11 @@ public class Network : BaseUnityPlugin
 		Assembly assembly = Assembly.GetExecutingAssembly();
 		Harmony harmony = new(ModGUID);
 		harmony.PatchAll(assembly);
-		HandleReturnToSender(harmony);
+		ReturnToSenderCompatibility.Handle(harmony);
+
 		return;
 
-		ConfigEntry<T> Bind<T>(string section, string name, T value, string description, ConfigScope scope, AcceptableValueBase? acceptable = null)
+		ConfigEntry<T> Bind<T>(string section, string name, T defaultValue, string description, ConfigScope scope, AcceptableValueBase? acceptableValues = null)
 		{
 			string where = scope switch
 			{
@@ -112,7 +113,8 @@ public class Network : BaseUnityPlugin
 				ConfigScope.Client => "Client",
 				_ => "This installation",
 			};
-			return Config.Bind(section, name, value, new ConfigDescription($"{description} [Runs on: {where}]", acceptable, new ConfigurationManagerAttributes { Order = --order }));
+
+			return Config.Bind(section, name, defaultValue, new ConfigDescription($"{description} [Runs on: {where}]", acceptableValues, new ConfigurationManagerAttributes { Order = --order }));
 		}
 	}
 
@@ -121,29 +123,6 @@ public class Network : BaseUnityPlugin
 		if (ImprovementEnabled(reportPatchConflicts))
 		{
 			ConflictCheck.Report(ModGUID);
-		}
-	}
-
-	private void HandleReturnToSender(Harmony harmony)
-	{
-		if (!ReturnToSenderCompatibility.IsActive())
-		{
-			return;
-		}
-
-		if (!ImprovementEnabled(adaptiveZdoScheduler))
-		{
-			Logger.LogInfo("ReturnToSender will control ZDO scheduling because Network's adaptive scheduler is disabled.");
-			return;
-		}
-
-		if (!ReturnToSenderCompatibility.Remove(harmony))
-		{
-			Logger.LogWarning("Could not remove ReturnToSender's ZDO scheduler. Network's adaptive scheduler will not run.");
-		}
-		else
-		{
-			Logger.LogInfo("ReturnToSender detected. Its ZDO scheduler was disabled so Network's adaptive scheduler can run.");
 		}
 	}
 }

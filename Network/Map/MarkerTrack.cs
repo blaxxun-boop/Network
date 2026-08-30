@@ -16,7 +16,7 @@ internal sealed class MarkerTrack
 	// MarkerTrack.Delay sits 1.3 intervals back.
 	public float Delay => Mathf.Clamp(arrivalGap * 1.3f, 0.15f, 2f);
 
-	public void Add(float now, Vector3 pos, float teleportThreshold)
+	public void Add(float now, Vector3 position, float teleportThreshold)
 	{
 		if (snapshots.Count > 0 && now <= snapshots[snapshots.Count - 1].time)
 		{
@@ -25,7 +25,6 @@ internal sealed class MarkerTrack
 
 		if (LastArrival >= 0f)
 		{
-			// This prevents markers jumping around.
 			arrivalGap = Mathf.Lerp(arrivalGap, Mathf.Clamp(now - LastArrival, 0.05f, 3f), 0.25f);
 		}
 
@@ -34,19 +33,19 @@ internal sealed class MarkerTrack
 		if (snapshots.Count > 0)
 		{
 			(float time, Vector3 position) last = snapshots[snapshots.Count - 1];
-			if (Vector3.Distance(last.position, pos) > teleportThreshold)
+			if (Vector3.Distance(last.position, position) > teleportThreshold)
 			{
 				snapshots.Clear();
 				velocity = Vector3.zero;
 			}
 			else
 			{
-				float dt = now - last.time;
-				velocity = dt > 0.01f ? Vector3.ClampMagnitude((pos - last.position) / dt, 50f) : Vector3.zero;
+				float deltaTime = now - last.time;
+				velocity = deltaTime > 0.01f ? Vector3.ClampMagnitude((position - last.position) / deltaTime, 50f) : Vector3.zero;
 			}
 		}
 
-		snapshots.Add((now, pos));
+		snapshots.Add((now, position));
 		while (snapshots.Count > MaxSnapshots)
 		{
 			snapshots.RemoveAt(0);

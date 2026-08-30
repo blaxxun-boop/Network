@@ -6,15 +6,15 @@ namespace Network.Sending;
 
 public static class SendPriority
 {
-	private static readonly Dictionary<int, float> prefabBonus = new();
-	private static readonly List<ZDO> promoted = new();
-	private static readonly List<ZDO> rest = new();
+	private static readonly Dictionary<int, float> prefabBonuses = new();
+	private static readonly List<ZDO> prioritized = new();
+	private static readonly List<ZDO> remaining = new();
 
 	// Stay under vanilla's 150 m staleness credit or scenery starves.
-	private static float Bonus(ZDO zdo)
+	private static float GetBonus(ZDO zdo)
 	{
-		int prefab = zdo.GetPrefab();
-		if (prefabBonus.TryGetValue(prefab, out float bonus))
+		int prefabHash = zdo.GetPrefab();
+		if (prefabBonuses.TryGetValue(prefabHash, out float bonus))
 		{
 			return bonus;
 		}
@@ -24,21 +24,21 @@ public static class SendPriority
 			return 0f;
 		}
 
-		GameObject go = ZNetScene.instance.GetPrefab(prefab);
-		if (!go)
+		GameObject prefab = ZNetScene.instance.GetPrefab(prefabHash);
+		if (!prefab)
 		{
 			return 0f;
 		}
 
-		if (go.TryGetComponent(out Player _))
+		if (prefab.TryGetComponent(out Player _))
 		{
 			bonus = 120f;
 		}
-		else if (go.TryGetComponent(out Ship _))
+		else if (prefab.TryGetComponent(out Ship _))
 		{
 			bonus = 80f;
 		}
-		else if (go.TryGetComponent(out Character _))
+		else if (prefab.TryGetComponent(out Character _))
 		{
 			bonus = 40f;
 		}
@@ -47,12 +47,12 @@ public static class SendPriority
 			bonus = 0f;
 		}
 
-		prefabBonus[prefab] = bonus;
+		prefabBonuses[prefabHash] = bonus;
 		return bonus;
 	}
 
 	[HarmonyPatch(typeof(ZDOMan), nameof(ZDOMan.ServerSortSendZDOS))]
-	private static class BiasTowardsActors
+	private static class PrioritizeActors
 	{
 		private static void Postfix(List<ZDO> objects)
 		{
@@ -61,37 +61,39 @@ public static class SendPriority
 				return;
 			}
 
-			promoted.Clear();
-			rest.Clear();
+			prioritized.Clear();
+			remaining.Clear();
 
 			foreach (ZDO zdo in objects)
 			{
-				float bonus = Bonus(zdo);
+				float bonus = GetBonus(zdo);
 				if (bonus > 0f)
 				{
 					zdo.m_tempSortValue -= bonus;
-					promoted.Add(zdo);
+					prioritized.Add(zdo);
 				}
 				else
 				{
-					rest.Add(zdo);
+					remaining.Add(zdo);
 				}
 			}
 
-			if (promoted.Count == 0)
+			if (prioritized.Count == 0)
 			{
+				remaining.Clear();
 				return;
 			}
 
-			// Sort shit again after vanilla does theirs
-			promoted.Sort(ZDOMan.ServerSendCompare);
-			SortedMerge.Into(objects, promoted, rest, ZDOMan.ServerSendCompare);
+			prioritized.Sort(ZDOMan.ServerSendCompare);
+			SortedMerge.Into(objects, prioritized, remaining, ZDOMan.ServerSendCompare);
+			prioritized.Clear();
+			remaining.Clear();
 		}
 	}
 
 	[HarmonyPatch(typeof(ZNetScene), nameof(ZNetScene.Awake))]
 	private static class ClearPrefabCacheOnSceneLoad
 	{
-		private static void Postfix() => prefabBonus.Clear();
+		private static void Postfix() => prefabBonuses.Clear();
 	}
 }

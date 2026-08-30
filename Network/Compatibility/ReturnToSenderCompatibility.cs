@@ -5,16 +5,38 @@ namespace Network.Compatibility;
 
 internal static class ReturnToSenderCompatibility
 {
-	private static readonly MethodInfo? update = AccessTools.DeclaredMethod(typeof(ZDOMan), nameof(ZDOMan.Update));
+	private static readonly MethodInfo? updateMethod = AccessTools.DeclaredMethod(typeof(ZDOMan), nameof(ZDOMan.Update));
 
-	public static bool IsActive()
+	public static void Handle(Harmony harmony)
 	{
-		if (update == null)
+		if (!IsActive())
+		{
+			return;
+		}
+
+		if (!Network.ImprovementEnabled(Network.adaptiveZdoScheduler))
+		{
+			Network.NetworkLogger.LogInfo("ReturnToSender will control ZDO scheduling because Network's adaptive scheduler is disabled.");
+			return;
+		}
+
+		if (!Remove(harmony))
+		{
+			Network.NetworkLogger.LogWarning("Could not remove ReturnToSender's ZDO scheduler. Network's adaptive scheduler will not run.");
+			return;
+		}
+
+		Network.NetworkLogger.LogInfo("ReturnToSender detected. Its ZDO scheduler was disabled so Network's adaptive scheduler can run.");
+	}
+
+	private static bool IsActive()
+	{
+		if (updateMethod == null)
 		{
 			return false;
 		}
 
-		Patches? patches = Harmony.GetPatchInfo(update);
+		Patches? patches = Harmony.GetPatchInfo(updateMethod);
 		if (patches == null)
 		{
 			return false;
@@ -31,14 +53,14 @@ internal static class ReturnToSenderCompatibility
 		return false;
 	}
 
-	public static bool Remove(Harmony harmony)
+	private static bool Remove(Harmony harmony)
 	{
-		if (update == null)
+		if (updateMethod == null)
 		{
 			return false;
 		}
 
-		harmony.Unpatch(update, HarmonyPatchType.Transpiler, Network.ReturnToSenderGUID);
+		harmony.Unpatch(updateMethod, HarmonyPatchType.Transpiler, Network.ReturnToSenderGUID);
 		return !IsActive();
 	}
 }

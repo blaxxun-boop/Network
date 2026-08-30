@@ -109,7 +109,7 @@
     <Target Name="AfterBuild">
     </Target>
     -->
-    <Target Name="Copy" AfterTargets="Build">
+    <Target Name="Copy" AfterTargets="Build" Condition="'$(DeployOnBuild)' != 'false'">
         <Exec Command="copy /Y &quot;$(TargetDir)$(AssemblyName).dll&quot; &quot;$(GamePath)\BepInEx\plugins\$(AssemblyName).dll&quot;"/>
     </Target>
 </Project>

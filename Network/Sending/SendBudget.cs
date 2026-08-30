@@ -7,37 +7,37 @@ internal static class SendBudget
 	private const float SmallServerRate = 1.5f;
 	private const float BoostWorkPeers = 15f;
 
-	public static float PerPeerRate(int count, float interval)
+	public static float PerPeerRate(int peerCount, float interval)
 	{
 		float baseline = 1f / Mathf.Max(interval, 0.01f);
-		return count > 0 ? baseline * Mathf.Max(1f, Mathf.Min(SmallServerRate, BoostWorkPeers / count)) : 0f;
+		return peerCount > 0 ? baseline * Mathf.Max(1f, Mathf.Min(SmallServerRate, BoostWorkPeers / peerCount)) : 0f;
 	}
 
 	// 16 peers at 30 fps needs 10.7/frame. Carry the 0.7.
-	public static int Take(ref float budget, int count, float dt, float interval, int cap)
+	public static int Take(ref float budget, int peerCount, float deltaTime, float interval, int maxPerFrame)
 	{
-		if (count <= 0)
+		if (peerCount <= 0)
 		{
 			budget = 0f;
 			return 0;
 		}
 
-		budget += count * dt * PerPeerRate(count, interval);
+		budget += peerCount * deltaTime * PerPeerRate(peerCount, interval);
 
-		int serve = (int)budget;
+		int scheduled = (int)budget;
 
 		// Don't carry capped work into the next SendBudget.
-		budget -= serve;
+		budget -= scheduled;
 
 		// A hitch can hand me 1 second of dt. Lap once.
-		if (serve <= count)
+		if (scheduled <= peerCount)
 		{
-			return cap > 0 ? Mathf.Min(serve, cap) : serve;
+			return maxPerFrame > 0 ? Mathf.Min(scheduled, maxPerFrame) : scheduled;
 		}
 
-		serve = count;
+		scheduled = peerCount;
 		budget = 0f;
 
-		return cap > 0 ? Mathf.Min(serve, cap) : serve;
+		return maxPerFrame > 0 ? Mathf.Min(scheduled, maxPerFrame) : scheduled;
 	}
 }
