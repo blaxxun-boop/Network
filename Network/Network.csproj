@@ -85,8 +85,18 @@
     </ItemGroup>
     <ItemGroup>
         <Compile Include="Network.cs"/>
+        <Compile Include="Compatibility\ConflictCheck.cs"/>
+        <Compile Include="Compatibility\ReturnToSenderCompatibility.cs"/>
+        <Compile Include="Connection\SteamSettings.cs"/>
+        <Compile Include="Connection\ZDODataBuffer.cs"/>
+        <Compile Include="Map\MapPositions.cs"/>
+        <Compile Include="Map\MarkerTrack.cs"/>
         <Compile Include="Properties\AssemblyInfo.cs"/>
-        <Compile Include="ZDODataBuffer.cs"/>
+        <Compile Include="Sending\PeerPosition.cs"/>
+        <Compile Include="Sending\PeerSendRate.cs"/>
+        <Compile Include="Sending\SendBudget.cs"/>
+        <Compile Include="Sending\SendPriority.cs"/>
+        <Compile Include="Sending\SortedMerge.cs"/>
     </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>
     <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
